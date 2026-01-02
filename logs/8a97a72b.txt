@@ -1,0 +1,13 @@
+Session: 8a97a72b
+Risk Level: Low
+Transcript: I just wanted to know when my next medication is due. My head feels a little dizzy but mostly I'm fine.
+Symptoms: []
+Reasoning: Rule-based fallback used.
+Logs:
+ - [2026-01-02T11:54:47.808181] DetectorAgent: Detected Symptoms: [], Intent: Status Inquiry
+ - [2026-01-02T11:54:47.808248] ReasonerAgent: Ollama connection error: Ollama library missing. Falling back to rule-based safety.
+ - [2026-01-02T11:54:47.808302] PlannerAgent: Determining action plan based on risk and reasoning...
+ - [2026-01-02T11:54:47.808328] PlannerAgent: Planned 1 actions.
+ - [2026-01-02T11:54:47.808388] ExecutorAgent: Executing: notify_patient...
+ - [2026-01-02T11:54:47.808489] ExecutorAgent: Successfully executed 1 actions.
+ - [2026-01-02T11:54:47.808561] FeedbackAgent: Performing final observation and audit trail...

@@ -1,0 +1,14 @@
+Session: c0a769f9
+Risk Level: Critical
+Transcript: Help, I have severe chest pain and I'm finding it hard to breathe. Please send someone.
+Symptoms: ['chest pain']
+Reasoning: Rule-based fallback: High-risk symptoms detected.
+Logs:
+ - [2026-01-02T11:55:19.203424] DetectorAgent: Detected Symptoms: ['chest pain'], Intent: Requesting Assistance
+ - [2026-01-02T11:55:19.203502] ReasonerAgent: Ollama connection error: Ollama library missing. Falling back to rule-based safety.
+ - [2026-01-02T11:55:19.203593] PlannerAgent: Determining action plan based on risk and reasoning...
+ - [2026-01-02T11:55:19.203669] PlannerAgent: Planned 2 actions.
+ - [2026-01-02T11:55:19.203733] ExecutorAgent: Executing: alert_staff...
+ - [2026-01-02T11:55:19.203855] ExecutorAgent: Executing: notify_patient...
+ - [2026-01-02T11:55:19.203956] ExecutorAgent: Successfully executed 2 actions.
+ - [2026-01-02T11:55:19.204001] FeedbackAgent: Performing final observation and audit trail...

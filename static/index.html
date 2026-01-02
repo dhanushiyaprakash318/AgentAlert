@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentAlert | Clinical Risk Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --clinical-bg: #F8FAFC;
+            --clinical-border: #E2E8F0;
+            --clinical-text: #1E293B;
+            --clinical-accent: #0284C7;
+            --status-pending: #94A3B8;
+            --status-active: #0EA5E9;
+            --status-success: #10B981;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--clinical-bg);
+            color: var(--clinical-text);
+            overflow: hidden;
+        }
+
+        .clinical-card {
+            background: white;
+            border: 1px solid var(--clinical-border);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .pipeline-item {
+            position: relative;
+            padding-left: 2rem;
+            border-left: 2px solid var(--clinical-border);
+            transition: all 0.4s ease;
+        }
+
+        .pipeline-item::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid var(--clinical-border);
+            transition: all 0.4s ease;
+        }
+
+        .pipeline-item.active {
+            border-left-color: var(--clinical-accent);
+        }
+
+        .pipeline-item.active::before {
+            background: var(--clinical-accent);
+            border-color: var(--clinical-accent);
+            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.1);
+        }
+
+        .pipeline-item.completed {
+            border-left-color: var(--status-success);
+        }
+
+        .pipeline-item.completed::before {
+            background: var(--status-success);
+            border-color: var(--status-success);
+        }
+
+        .badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-low {
+            background: #F1F5F9;
+            color: #475569;
+        }
+
+        .badge-medium {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .badge-high {
+            background: #FFEDD5;
+            color: #9A3412;
+        }
+
+        .badge-critical {
+            background: #FEE2E2;
+            color: #991B1B;
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(153, 27, 27, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(153, 27, 27, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(153, 27, 27, 0);
+            }
+        }
+
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .listening-indicator {
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: breathe 1.5s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.5);
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col">
+    <!-- Clinical Header -->
+    <header class="h-16 border-b border-slate-200 bg-white px-8 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-sky-600 rounded flex items-center justify-center">
+                <i data-lucide="activity" class="text-white w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg tracking-tight">AgentAlert</h1>
+                <p class="text-slate-400 text-[10px] uppercase font-bold tracking-widest leading-none">Clinical Risk
+                    Monitoring</p>
+            </div>
+        </div>
+
+        <div id="conn-status" class="flex items-center gap-4">
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200">
+                <span id="conn-indicator" class="w-2 h-2 rounded-full bg-slate-300"></span>
+                <span id="conn-text"
+                    class="text-xs font-semibold text-slate-500 uppercase tracking-tighter">Connecting...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar: Pipeline -->
+        <aside class="w-72 border-r border-slate-200 bg-white p-6 flex flex-col gap-8 flex-shrink-0 overflow-y-auto">
+            <div>
+                <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6">Agentic Pipeline</h2>
+                <div class="space-y-8 ml-2">
+                    <div id="agent-DetectorAgent" class="pipeline-item">
+                        <p class="text-[10px] font-bold uppercase text-slate-400 leading-none mb-1">Step 01</p>
+                        <h3 class="text-sm font-semibold">Detector Agent</h3>
+                        <p class="text-[11px] text-slate-500 status">Pending</p>
+                    </div>
+                    <div id="agent-ReasonerAgent" class="pipeline-item">
+                        <p class="text-[10px] font-bold uppercase text-slate-400 leading-none mb-1">Step 02</p>
+                        <h3 class="text-sm font-semibold">Reasoner Agent</h3>
+                        <p class="text-[11px] text-slate-500 status">Pending</p>
+                    </div>
+                    <div id="agent-PlannerAgent" class="pipeline-item">
+                        <p class="text-[10px] font-bold uppercase text-slate-400 leading-none mb-1">Step 03</p>
+                        <h3 class="text-sm font-semibold">Planner Agent</h3>
+                        <p class="text-[11px] text-slate-500 status">Pending</p>
+                    </div>
+                    <div id="agent-ExecutorAgent" class="pipeline-item">
+                        <p class="text-[10px] font-bold uppercase text-slate-400 leading-none mb-1">Step 04</p>
+                        <h3 class="text-sm font-semibold">Executor Agent</h3>
+                        <p class="text-[11px] text-slate-500 status">Pending</p>
+                    </div>
+                    <div id="agent-FeedbackAgent" class="pipeline-item">
+                        <p class="text-[10px] font-bold uppercase text-slate-400 leading-none mb-1">Step 05</p>
+                        <h3 class="text-sm font-semibold">Feedback Agent</h3>
+                        <p class="text-[11px] text-slate-500 status">Pending</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-8 overflow-y-auto bg-slate-50 flex flex-col gap-6">
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <!-- Encounter Summary -->
+                <div class="clinical-card p-6 flex flex-col gap-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold flex items-center gap-2">
+                            <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                            Patient Encounter Summary
+                        </h2>
+                        <span id="risk-badge" class="badge badge-low">No Data</span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="p-4 bg-slate-50 rounded border border-slate-100 flex flex-col gap-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Encounter
+                                    Transcript</label>
+                            </div>
+                            <div id="transcript" class="text-slate-600 text-sm leading-relaxed italic min-h-[40px]">
+                                Type the patient's symptoms below to begin risk analysis...
+                            </div>
+
+                            <!-- Manual Text Entry for Demo -->
+                            <div class="mt-2 pt-3 border-t border-slate-200/60 flex gap-2">
+                                <input type="text" id="manual-input"
+                                    placeholder="Type patient symptoms here (e.g. 'I have chest pain')..."
+                                    class="flex-1 bg-white border border-slate-200 rounded px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all">
+                                <button id="send-btn"
+                                    class="px-3 py-1.5 bg-sky-600 text-white rounded hover:bg-sky-700 transition-colors flex items-center justify-center">
+                                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label
+                                class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Symptom
+                                Matrix</label>
+                            <div id="symptoms" class="flex flex-wrap gap-2">
+                                <span class="text-slate-300 text-[11px] italic">Automated identification
+                                    pending...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LLM & Decision -->
+                <div class="clinical-card p-6 flex flex-col gap-6">
+                    <h2 class="font-bold flex items-center gap-2">
+                        <i data-lucide="brain-circuit" class="w-4 h-4 text-slate-400"></i>
+                        Agentic Reasoning (LLaMA 3)
+                    </h2>
+
+                    <div id="reasoning-container"
+                        class="flex-1 p-4 bg-slate-900 rounded text-slate-300 text-[13px] font-mono leading-relaxed overflow-y-auto max-h-[250px] scroll-hide">
+                        <div id="reasoning-text" class="opacity-50 italic">
+                            Awaiting agent processing segment...
+                        </div>
+                    </div>
+
+                    <div id="planner-status"
+                        class="flex items-center gap-2 text-xs font-semibold text-slate-400 italic">
+                        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                        Safety checks enabled. No treatment suggestions permitted.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Panel -->
+            <div class="clinical-card flex-1 flex flex-col">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <h2 class="font-bold text-sm uppercase tracking-tight flex items-center gap-2">
+                        <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+                        Automated Clinical Actions
+                    </h2>
+                    <span class="text-[10px] font-bold text-slate-400">SESSION_ID: <span
+                            id="session-id">----</span></span>
+                </div>
+                <div id="action-list" class="flex-1 p-4 space-y-2 overflow-y-auto">
+                    <div class="h-full flex items-center justify-center text-slate-300 italic text-sm">
+                        No protocols triggered in current monitoring period.
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        let socket;
+        const connIndicator = document.getElementById('conn-indicator');
+        const connText = document.getElementById('conn-text');
+
+        function connect() {
+            socket = new WebSocket(`ws://${location.host}/ws`);
+
+            socket.onopen = () => {
+                connIndicator.className = 'w-2 h-2 rounded-full bg-emerald-500';
+                connText.innerText = 'Connected';
+                connText.classList.replace('text-slate-500', 'text-emerald-600');
+            };
+
+            socket.onclose = () => {
+                connIndicator.className = 'w-2 h-2 rounded-full bg-red-400';
+                connText.innerText = 'Disconnected';
+                connText.classList.replace('text-emerald-600', 'text-red-500');
+                setTimeout(connect, 2000);
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'session_started') {
+                    document.getElementById('session-id').innerText = data.session_id;
+                    resetUI();
+                } else if (data.type === 'agent_update') {
+                    updateAgentUI(data.agent, data.state);
+                }
+            };
+        }
+
+        function resetUI() {
+            document.querySelectorAll('.pipeline-item').forEach(item => {
+                item.className = "pipeline-item";
+                item.querySelector('.status').innerText = "Pending";
+            });
+            document.getElementById('transcript').innerText = "Type the patient's symptoms below to begin risk analysis...";
+            document.getElementById('symptoms').innerHTML = '<span class="text-slate-300 text-[11px] italic">Automated identification pending...</span>';
+            document.getElementById('reasoning-text').innerText = "Awaiting agent processing segment...";
+            document.getElementById('reasoning-text').className = "opacity-50 italic";
+            document.getElementById('action-list').innerHTML = '<div class="h-full flex items-center justify-center text-slate-300 italic text-sm">No protocols triggered.</div>';
+            document.getElementById('risk-badge').className = "badge badge-low";
+            document.getElementById('risk-badge').innerText = "IDLE";
+        }
+
+        function updateAgentUI(agentName, state) {
+            const item = document.getElementById(`agent-${agentName}`);
+            if (item) {
+                // Mark previous as completed, current as active
+                item.className = "pipeline-item active";
+                item.querySelector('.status').innerText = "Processing...";
+
+                // Visual progression: mark previous items as completed
+                const ids = ['DetectorAgent', 'ReasonerAgent', 'PlannerAgent', 'ExecutorAgent', 'FeedbackAgent'];
+                const idx = ids.indexOf(agentName);
+                ids.forEach((id, i) => {
+                    const el = document.getElementById(`agent-${id}`);
+                    if (i < idx) {
+                        el.className = "pipeline-item completed";
+                        el.querySelector('.status').innerText = "Completed";
+                    }
+                });
+            }
+
+            if (state.transcript) {
+                document.getElementById('transcript').innerText = `"${state.transcript}"`;
+                document.getElementById('transcript').className = "text-slate-800 text-sm leading-relaxed font-medium";
+            }
+
+            if (state.symptoms && state.symptoms.length > 0) {
+                document.getElementById('symptoms').innerHTML = state.symptoms.map(s =>
+                    `<span class="px-2 py-0.5 bg-sky-100 text-sky-700 rounded text-[10px] font-bold border border-sky-200">#${s.toUpperCase()}</span>`
+                ).join('');
+            }
+
+            if (state.reasoning) {
+                document.getElementById('reasoning-text').innerText = state.reasoning;
+                document.getElementById('reasoning-text').className = "text-emerald-400";
+            }
+
+            if (state.risk_level) {
+                const badge = document.getElementById('risk-badge');
+                badge.innerText = state.risk_level;
+                const classMap = {
+                    'Low': 'badge-low',
+                    'Moderate': 'badge-medium',
+                    'High': 'badge-high',
+                    'Critical': 'badge-critical'
+                };
+                badge.className = `badge ${classMap[state.risk_level] || 'badge-low'}`;
+            }
+
+            if (state.executed_actions && state.executed_actions.length > 0) {
+                const list = document.getElementById('action-list');
+                list.innerHTML = state.executed_actions.map(action => `
+                    <div class="p-3 bg-white border border-slate-200 rounded flex items-center gap-4 animate-in fade-in slide-in-from-left-2">
+                        <div class="w-8 h-8 rounded bg-slate-50 flex items-center justify-center">
+                            <i data-lucide="${action.type === 'alert_staff' ? 'bell' : 'message-square'}" class="w-4 h-4 ${action.type === 'alert_staff' ? 'text-red-500' : 'text-sky-500'}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs font-bold text-slate-700">${action.message || action.type}</p>
+                            <p class="text-[9px] text-slate-400 uppercase font-bold tracking-tighter">${action.type} • ${action.executed_at || 'just now'}</p>
+                        </div>
+                        <div class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[8px] font-bold border border-emerald-100 uppercase">Success</div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            }
+        }
+
+        const manualInput = document.getElementById('manual-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        function sendManualTranscript() {
+            const text = manualInput.value.trim();
+            if (text && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    type: "manual_transcript",
+                    text: text
+                }));
+                manualInput.value = '';
+            }
+        }
+
+        sendBtn.onclick = sendManualTranscript;
+        manualInput.onkeypress = (e) => {
+            if (e.key === 'Enter') sendManualTranscript();
+        };
+
+        connect();
+    </script>
+</body>
+
+</html>
