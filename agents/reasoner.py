@@ -42,7 +42,10 @@ class ReasonerAgent(BaseAgent):
                 raise ImportError("Ollama library missing")
             
             self.log(state, f"Involving {self.model_name} for risk reasoning...")
-            response = ollama.generate(model=self.model_name, prompt=prompt)
+            
+            # Use AsyncClient to prevent blocking the event loop
+            client = ollama.AsyncClient()
+            response = await client.generate(model=self.model_name, prompt=prompt)
             output = response['response']
             
             # Basic parsing of the LLM output

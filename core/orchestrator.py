@@ -20,9 +20,10 @@ class HospitalOrchestrator:
             FeedbackAgent()
         ]
 
-    async def run_pipeline(self, state: PatientState, on_agent_complete=None) -> PatientState:
-        print(f"\n--- Starting Orchestration for Session {state.session_id} ---")
-        for agent in self.agents:
+    async def run_pipeline(self, state: PatientState, on_agent_complete=None, max_agents: int = None) -> PatientState:
+        print(f"\n--- Starting Orchestration for Session {state.session_id} (max_agents: {max_agents}) ---")
+        agents_to_run = self.agents[:max_agents] if max_agents else self.agents
+        for agent in agents_to_run:
             state = await agent.process(state)
             if on_agent_complete:
                 await on_agent_complete(agent.name, state)
